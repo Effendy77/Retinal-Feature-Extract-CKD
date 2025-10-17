@@ -1,0 +1,9 @@
+## Ignore generated CSVs and large data files
+*.csv
+*.zip
+__pycache__/
+.env
+.vscode/
+
+# If you keep small config or doc files in data/ change this accordingly
+data/

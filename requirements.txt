@@ -1,0 +1,4 @@
+pandas>=1.4.0
+numpy>=1.21.0
+
+# Optional: add versions used in your conda environment for exact reproducibility
