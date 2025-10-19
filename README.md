@@ -1,125 +1,115 @@
-AUTOMORPH — dataset exports and reproducibility notes
+AUTOMORPH Preprocessing for Retinal Feature Extraction
+This repository contains the Python scripts used to process and generate the participant-level datasets from the AUTOMORPH pipeline for the Retinal Feature Extraction experiments.
 
 Overview
---------
-This folder contains image- and participant-level CSVs produced by the AUTOMORPH pipeline for the Retfound experiments. Files were generated from:
-- vessel_features_merged.csv (image-level vessel features)
-- retina_ckd_survival_ready_PAIRED.csv (participant table with left/right file names and eid)
+The scripts in this repository process raw, image-level vessel feature data (vessel_features_merged.csv) and map it to a participant cohort (retina_ckd_survival_ready_PAIRED.csv). The primary output is a set of participant-level CSV files suitable for model training, with various strategies for handling left- and right-eye data.
 
-This README documents which files to use, how they were created, counts, and exact commands to reproduce the outputs locally.
+Prerequisites
+Python 3.8+
 
-Primary files (one-row-per-participant)
----------------------------------------
-- master_participant_level_single_image_aggregated.csv
-  - Description: One row per participant. For each numeric feature, value is taken from the left-eye measurement when available; otherwise the right-eye measurement is used (left-preferred, right-fallback). Column names are base feature names (no _left/_right suffix). Use this for training Retfound models that expect exactly one row per participant.
-  - Path: M:/NEW-PROJECT/AUTOMORPH/master_participant_level_single_image_aggregated.csv
+Conda package manager
 
-- master_participant_level_single_image.csv
-  - Description: Full participant table with metadata and the merged left_/right_ columns as well as the combined base-named features.
-  - Path: M:/NEW-PROJECT/AUTOMORPH/master_participant_level_single_image.csv
+Required Python packages: pandas, numpy
 
-Provenance / eye provenance
----------------------------
-- master_participant_eye_used.csv — lists per `eid` which eye contributed the features in the combined single-image file.
-  - Values: 'left' or 'right'
-  - Path: M:/NEW-PROJECT/AUTOMORPH/master_participant_eye_used.csv
+⚙️ Setup and Installation
+Clone the repository:
 
-Left-only and right-only experiment files
-----------------------------------------
-- master_participant_level_left_only_aggregated.csv  (left-only aggregated)
-- master_participant_level_left_only.csv             (left-only full)
-- master_participant_level_right_only_aggregated.csv (right-only aggregated)
-- master_participant_level_right_only.csv            (right-only full)
+Bash
 
-Image-level and QC
-------------------
-- master_image_level.csv — image-level rows, mapping info and mapping_status for each image row.
-- qc_report.txt — run counts and quick QC summary.
-- participants_only_right.csv — list of eids that only had right-image matches (useful for auditing)
+git clone https://github.com/Effendy77/Retinal-Feature-Extract-CKD.git
+cd Retinal-Feature-Extract-CKD
+Create the Conda environment: An environment.yml file is provided for easy setup.
 
-Counts (from most recent run)
------------------------------
-- Total participants in `pat` (retina_ckd_survival_ready_PAIRED.csv): 85,333
-- Participants with at least one mapped image (left or right): 16,458
-  - only left: 6,502
-  - only right: 8,212
-  - both left and right: 1,744
-- Left-only exported participants: 8,246
-- Right-only exported participants: 8,212
-- Combined (left preferred, right fallback): 16,458
-- Image-level rows in vessel_features_merged.csv: 31,389
+Bash
 
-Notes on how features were merged
----------------------------------
-- Feature selection: only numeric columns from `vessel_features_merged.csv` were treated as features. Non-numeric columns and mapping columns were excluded from aggregation.
-- Combined logic: for each numeric feature f, code sets final feature f = left_f (if present) else right_f. The `eye_used` column indicates the source.
-- Left-only and right-only CSVs were created by filtering based on `eye_used` / `used_left` / `used_right` flags.
+conda env create -f environment.yml
+conda activate automorph_env
+(Note: If you don't have an environment.yml file, you can create one from your working environment by running conda env export > environment.yml)
 
-Reproducibility — run locally
-----------------------------
-Prerequisites:
-- Python (tested with the conda environment used here)
-- pandas, numpy installed in the environment
-- Files present in M:/NEW-PROJECT/AUTOMORPH: vessel_features_merged.csv and retina_ckd_survival_ready_PAIRED.csv
+Place the data: Create a data directory inside the repository and place the two required source files inside it:
 
-Run steps (PowerShell example using a conda/python path):
+Retinal-Feature-Extract-CKD/
+├── data/
+│   ├── vessel_features_merged.csv
+│   └── retina_ckd_survival_ready_PAIRED.csv
+├── scripts/
+│   ├── creating_new_image_and_participant_level_qc.py
+│   └── ... (other scripts)
+└── README.md
+🚀 Usage: Generating the Datasets
+All generated files will be placed in an output directory.
 
-# Use the conda env you used during development (example)
-& 'D:\conda_envs\new_env\python.exe' "M:\NEW-PROJECT\AUTOMORPH\Creating new image and participant level QC.py"
+1. Generate the Primary Datasets
+This script creates the main participant-level files and a QC report.
 
-This will (re)generate:
-- master_image_level.csv
-- master_participant_level_single_image.csv
-- master_participant_level_single_image_aggregated.csv
-- master_participant_eye_used.csv
-- qc_report.txt
+Bash
 
-To export left-only or right-only CSVs run:
-& 'D:\conda_envs\new_env\python.exe' "M:\NEW-PROJECT\AUTOMORPH\export_left_only.py"
-& 'D:\conda_envs\new_env\python.exe' "M:\NEW-PROJECT\AUTOMORPH\export_right_only.py"
+python scripts/creating_new_image_and_participant_level_qc.py
+This will generate the following files in the output/ directory:
 
-Suggested experiments
----------------------
-- Baseline: use `master_participant_level_left_only_aggregated.csv` to train with left-eye features only (no cross-eye leakage). 8,246 participants.
-- Combined: use `master_participant_level_single_image_aggregated.csv` (left preferred, right fallback) to maximize sample size (16,458 participants). Include `eye_used` or `used_right` as a covariate to control for eye differences.
-- Two-eye model: use `master_participant_level_single_image.csv` (contains `left_` and `right_` columns) so models can explicitly use both-eye measurements where available.
-- Per-image model: use `master_image_level.csv` to build an image-level model (two rows per participant) — take care with cross-validation (prevent same participant in both train/test folds).
+master_image_level.csv
 
-Caveats and recommendations
----------------------------
-- To avoid leakage when doing k-fold cross-validation, ensure participant-level splitting (not image-level) if you use both-eye data or per-image data. Do not place the two images from the same participant across train/test folds.
-- The combined dataset selects left-first. If you later want to treat right-only participants differently, keep `master_participant_eye_used.csv` and `used_right` flags to stratify or use as covariates.
+master_participant_level_single_image.csv
 
-Packaging for GitHub
---------------------
-- Recommended: commit this README and the small scripts (Creating new image and participant level QC.py, export_left_only.py, export_right_only.py) to the repo. Do NOT commit large CSVs to the repo — instead export the CSVs to a release asset or store them on a data server and include download instructions.
+master_participant_level_single_image_aggregated.csv
 
-If you want, I can:
-- Add a small README section that includes the exact git commands to add/commit these scripts and the README.
-- Produce a compressed archive (.zip) of the aggregated CSVs ready for upload.
+master_participant_eye_used.csv
 
-Contact / notes
----------------
-If you want me to also add a short Jupyter notebook comparing distributions of a few key features across left/right/combined, I can add that next (it will include simple plots and summary statistics).
+qc_report.txt
 
-GitHub: add scripts to your existing repo (example PowerShell commands)
----------------------------------------------------------------
-Run these from PowerShell inside M:\NEW-PROJECT\AUTOMORPH (or adjust the paths). These commands will add the scripts and README to your repository while ignoring CSVs via .gitignore.
+2. Generate Left-Only and Right-Only Datasets
+To create datasets for specific eye experiments, run the corresponding export scripts:
 
-cd 'M:\NEW-PROJECT\AUTOMORPH'
+Bash
 
-# Initialize git and add remote (skip if the repo is already set up)
-git init
-git remote add origin https://github.com/Effendy77/retina-renal-ai.git
+# Export left-eye only data
+python scripts/export_left_only.py
 
-# Stage scripts and README (note: the long filename with spaces is escaped by quoting)
-git add "Creating new image and participant level QC.py" export_left_only.py export_right_only.py count_right_drops.py verify_left_right_separate_images.py README.md .gitignore
+# Export right-eye only data
+python scripts/export_right_only.py
+📂 Generated File Descriptions
+Primary Files (One-Row-Per-Participant)
+master_participant_level_single_image_aggregated.csv: Recommended for most models. One row per participant. Features are taken from the left eye if available, otherwise the right eye is used.
 
-# Commit and push (adjust branch name if needed)
-git commit -m "Add AUTOMORPH preprocessing scripts and README (left/right export, QC)"
-git branch -M main
-git push -u origin main
+master_participant_level_single_image.csv: Full participant table with all metadata, including separate _left and _right feature columns.
 
-Notes:
-- If your GitHub repo already has commits, prefer to `git pull` first or create a branch to avoid overwriting history.
-- CSVs are excluded by .gitignore; if you need to force-add a small CSV, use `git add -f <file>` selectively.
+master_participant_eye_used.csv: A helper file listing which eye (left or right) was used for each participant in the aggregated dataset.
+
+Image-Level and QC Files
+master_image_level.csv: Contains one row per image, including mapping status.
+
+qc_report.txt: A summary of participant and image counts from the generation process.
+
+Methodology
+Feature Selection: Only numeric columns from the source data were aggregated as features.
+
+Aggregation Logic: For the primary combined dataset, the final feature value is taken from the left eye's measurement. If a left-eye measurement is not available, the right eye's measurement is used as a fallback. The master_participant_eye_used.csv file tracks the source for each participant.
+
+🧪 Suggested Experiments
+Baseline Model: Train using master_participant_level_left_only_aggregated.csv (8,246 participants) to avoid any potential data leakage between eyes.
+
+Combined Model: Train using master_participant_level_single_image_aggregated.csv (16,458 participants) to maximize sample size. Consider including the eye_used column as a feature to control for potential systemic differences between eyes.
+
+Two-Eye Model: Use the detailed master_participant_level_single_image.csv to build a model that can explicitly use features from both eyes when available.
+
+⚠️ Important Caveat on Cross-Validation
+To avoid data leakage, always split your data at the participant level, not the image level. Ensure that both images from a single participant do not end up in different folds (e.g., one in training and one in testing).
+
+Publishing Data
+The scripts and this README should be committed to the Git repository. The large input and output CSV files should not be committed.
+
+Instead, they should be packaged (e.g., in a .zip archive) and uploaded as a Release Asset on GitHub.
+
+.gitignore
+Use a .gitignore file to prevent large data files from being tracked by Git.
+
+# Data files
+data/
+output/
+*.csv
+*.zip
+
+# Python / Conda
+__pycache__/
+*.ipynb_checkpoints
+.conda
