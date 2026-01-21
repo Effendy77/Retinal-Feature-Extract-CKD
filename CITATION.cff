@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+title: "Retinal vascular feature extraction for kidney disease modelling"
+authors:
+  - family-names: "Bin Hashim"
+    given-names: "Effendy"
+version: 1.0.0
+date-released: 2026-01-21
+url: "https://github.com/Effendy77/Retinal-Feature-Extract-CKD"

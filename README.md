@@ -1,6 +1,15 @@
 AUTOMORPH Preprocessing for Retinal Feature Extraction
 This repository contains the Python scripts used to process and generate the participant-level datasets from the AUTOMORPH pipeline for the Retinal Feature Extraction experiments.
 
+## Upstream dependency: AutoMorph
+Retinal vessel segmentation is performed using AutoMorph, a publicly available automated retinal vascular analysis pipeline. This repository assumes availability of AutoMorph segmentation outputs and does not re-implement, retrain, or modify the segmentation algorithm.
+
+## Scope of this repository
+This repository provides full reproducibility for all downstream processing steps following vessel segmentation, including vascular feature curation, participant-level aggregation, eye-selection logic, and quality control.
+
+## What this repository does NOT do
+This repository does not train or modify the AutoMorph segmentation model.
+
 Overview
 The scripts in this repository process raw, image-level vessel feature data (vessel_features_merged.csv) and map it to a participant cohort (retina_ckd_survival_ready_PAIRED.csv). The primary output is a set of participant-level CSV files suitable for model training, with various strategies for handling left- and right-eye data.
 
