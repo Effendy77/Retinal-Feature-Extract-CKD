@@ -10,6 +10,19 @@ This repository provides full reproducibility for all downstream processing step
 ## What this repository does NOT do
 This repository does not train or modify the AutoMorph segmentation model.
 
+## Relationship to supplementary methods and figures
+
+This repository provides the **code and pipelines for extracting handcrafted retinal vascular features** from automated vessel segmentations.
+
+The **methodological justification, exploratory analyses, and feature selection rationale** (including correlation analysis, distributional assessment, and PCA diagnostics) are documented separately in the companion repository:
+
+👉 **https://github.com/Effendy77/retina-ckd-supplementary**
+
+That repository contains the submission-ready **Supplementary Methods S1** and **Supplementary Figures S1–S5** referenced in the associated manuscripts.
+
+Feature extraction code in this repository is **outcome-agnostic** and was applied identically across downstream tasks, including eGFR regression and ESRD risk/survival modelling.
+
+
 Overview
 The scripts in this repository process raw, image-level vessel feature data (vessel_features_merged.csv) and map it to a participant cohort (retina_ckd_survival_ready_PAIRED.csv). The primary output is a set of participant-level CSV files suitable for model training, with various strategies for handling left- and right-eye data.
 
@@ -122,3 +135,4 @@ output/
 __pycache__/
 *.ipynb_checkpoints
 .conda
+
